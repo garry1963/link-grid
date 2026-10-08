@@ -1,0 +1,6 @@
+{
+  "name": "Dot Connect - Android Logic Puzzle",
+  "description": "A minimalist Android-style logic puzzle game. Connect pairs of matching colored dots without crossing paths while filling every grid cell.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
