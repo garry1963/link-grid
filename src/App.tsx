@@ -610,13 +610,14 @@ export default function App() {
               paths={currentPaths}
               onPathsChange={handlePathsChange}
               colorAccessibilityMode={settings.colorAccessibilityMode}
+              highContrastGrid={settings.highContrastGrid ?? true}
               highlightedColorId={highlightedColorId}
               suggestedCell={suggestedCell}
             />
           </div>
 
           {/* Bottom helper tip */}
-          <div className="w-full max-w-[420px] mx-auto text-center px-4 py-1 text-[11px] text-slate-500 font-medium">
+          <div className="w-full max-w-[420px] sm:max-w-[500px] md:max-w-[580px] lg:max-w-[640px] xl:max-w-[680px] mx-auto text-center px-4 py-1 text-[11px] sm:text-xs text-slate-400 font-medium">
             {boardStatus.connectedPairsCount === boardStatus.totalPairsCount &&
             boardStatus.occupiedCellsCount < boardStatus.totalCellsCount ? (
               <span className="text-amber-400 animate-pulse font-semibold">

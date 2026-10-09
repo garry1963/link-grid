@@ -8,6 +8,7 @@ interface GameBoardProps {
   paths: Path[];
   onPathsChange: (newPaths: Path[], moveIncrement?: boolean) => void;
   colorAccessibilityMode: boolean;
+  highContrastGrid?: boolean;
   highlightedColorId?: number | null;
   suggestedCell?: Point | null;
 }
@@ -17,6 +18,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   paths,
   onPathsChange,
   colorAccessibilityMode,
+  highContrastGrid = true,
   highlightedColorId,
   suggestedCell,
 }) => {
@@ -247,7 +249,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   );
 
   return (
-    <div className="relative w-full max-w-[420px] aspect-square mx-auto select-none touch-none p-1.5 sm:p-2 bg-slate-900/90 rounded-3xl border border-slate-800/80 shadow-2xl backdrop-blur-xl">
+    <div className="relative w-full max-w-[420px] sm:max-w-[500px] md:max-w-[580px] lg:max-w-[640px] xl:max-w-[680px] aspect-square mx-auto select-none touch-none p-2 sm:p-3 md:p-3.5 bg-gradient-to-b from-[#141e33] to-[#090e1a] rounded-3xl border-2 border-slate-700/80 shadow-2xl shadow-cyan-950/25 backdrop-blur-xl">
       <div
         ref={containerRef}
         onMouseDown={e => handlePointerStart(e.clientX, e.clientY)}
@@ -256,36 +258,94 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             handlePointerStart(e.touches[0].clientX, e.touches[0].clientY);
           }
         }}
-        className="relative w-full h-full rounded-2xl overflow-hidden bg-[#0a0f1d] border border-slate-800/60 shadow-inner"
+        className="relative w-full h-full rounded-2xl overflow-hidden bg-[#080d18] border-2 border-slate-700/90 shadow-inner"
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${puzzle.width}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${puzzle.height}, minmax(0, 1fr))`,
         }}
       >
-        {/* Subtle grid cells */}
+        {/* High-definition grid cell tiles */}
         {Array.from({ length: puzzle.height }).map((_, r) =>
           Array.from({ length: puzzle.width }).map((_, c) => {
             const isSuggested = suggestedCell && suggestedCell.x === c && suggestedCell.y === r;
             return (
               <div
                 key={`cell_${c}_${r}`}
-                className={`relative border border-slate-800/35 transition-colors duration-200 ${
-                  isSuggested ? 'bg-amber-400/20 ring-2 ring-amber-400 ring-inset animate-pulse' : ''
+                className={`relative flex items-center justify-center bg-[#0c1424] border transition-colors duration-200 ${
+                  highContrastGrid
+                    ? 'border-slate-700/80 sm:border-slate-600/85'
+                    : 'border-slate-800/60'
+                } shadow-[inset_0_0_8px_rgba(0,0,0,0.5)] ${
+                  isSuggested ? 'bg-amber-400/25 ring-2 ring-amber-400 ring-inset animate-pulse' : ''
                 }`}
               >
-                {/* Center dot guide */}
-                <div className="absolute inset-0 m-auto w-1 h-1 rounded-full bg-slate-700/20 pointer-events-none" />
+                {/* Center dot node guide - distinct and tactile */}
+                <div
+                  className={`rounded-full pointer-events-none transition-all ${
+                    highContrastGrid
+                      ? 'w-2 h-2 sm:w-2.5 sm:h-2.5 bg-slate-500/50 border border-slate-400/30'
+                      : 'w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-600/30'
+                  }`}
+                />
               </div>
             );
           })
         )}
 
-        {/* SVG Path Layer with Smooth Rounded Lines */}
+        {/* SVG Path & Grid Layer */}
         <svg
           className="absolute inset-0 w-full h-full pointer-events-none z-10"
           viewBox={`0 0 ${puzzle.width * 100} ${puzzle.height * 100}`}
         >
+          {/* Vector Grid Layer: Sharp, high-contrast lines on high-DPI tablets */}
+          <g className="grid-vector-lines">
+            {Array.from({ length: puzzle.width - 1 }).map((_, i) => (
+              <line
+                key={`gv_${i}`}
+                x1={(i + 1) * 100}
+                y1={0}
+                x2={(i + 1) * 100}
+                y2={puzzle.height * 100}
+                stroke={highContrastGrid ? '#334668' : '#22314a'}
+                strokeWidth={highContrastGrid ? '2.5' : '1.8'}
+              />
+            ))}
+            {Array.from({ length: puzzle.height - 1 }).map((_, i) => (
+              <line
+                key={`gh_${i}`}
+                x1={0}
+                y1={(i + 1) * 100}
+                x2={puzzle.width * 100}
+                y2={(i + 1) * 100}
+                stroke={highContrastGrid ? '#334668' : '#22314a'}
+                strokeWidth={highContrastGrid ? '2.5' : '1.8'}
+              />
+            ))}
+            {/* Grid Crosshair Intersections */}
+            {Array.from({ length: puzzle.width - 1 }).map((_, c) =>
+              Array.from({ length: puzzle.height - 1 }).map((_, r) => (
+                <circle
+                  key={`gi_${c}_${r}`}
+                  cx={(c + 1) * 100}
+                  cy={(r + 1) * 100}
+                  r="2.5"
+                  fill="#64748b"
+                  opacity={highContrastGrid ? 0.85 : 0.5}
+                />
+              ))
+            )}
+            {/* Crisp Inner Board Boundary */}
+            <rect
+              x="0.5"
+              y="0.5"
+              width={puzzle.width * 100 - 1}
+              height={puzzle.height * 100 - 1}
+              fill="none"
+              stroke="#3a4f75"
+              strokeWidth="2.5"
+            />
+          </g>
           {paths.map(p => {
             if (p.cells.length < 2) return null;
             const color = getColor(p.colorId);

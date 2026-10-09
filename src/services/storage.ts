@@ -11,6 +11,7 @@ const DEFAULT_SETTINGS: Settings = {
   showTimer: true,
   showMoves: true,
   volume: 0.7,
+  highContrastGrid: true,
 };
 
 const DEFAULT_STATS: PlayerStatistics = {

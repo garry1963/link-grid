@@ -55,7 +55,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   };
 
   return (
-    <div className="w-full max-w-[440px] mx-auto px-3 py-2 flex flex-col gap-2.5">
+    <div className="w-full max-w-[440px] sm:max-w-[520px] md:max-w-[600px] lg:max-w-[660px] xl:max-w-[700px] mx-auto px-3 py-2 flex flex-col gap-2.5">
       {/* Top Bar with Navigation and Title */}
       <div className="flex items-center justify-between">
         <button

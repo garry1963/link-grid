@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Volume2, Smartphone, Eye, Clock, Hash, Trash2, Shield, Info } from 'lucide-react';
+import { ArrowLeft, Volume2, Smartphone, Eye, Clock, Hash, Trash2, Shield, Info, Grid } from 'lucide-react';
 import { Settings } from '../types/puzzle';
 import { sound } from '../services/audio';
 
@@ -126,6 +126,30 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div
                 className={`w-4 h-4 rounded-full bg-white transition-transform absolute top-1 ${
                   settings.colorAccessibilityMode ? 'left-7' : 'left-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-slate-800/60">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-slate-800 text-slate-300">
+                <Grid size={18} />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-white">High-Definition Grid</div>
+                <div className="text-xs text-slate-400">Crisp vector lines & node pips for tablets</div>
+              </div>
+            </div>
+            <button
+              onClick={() => toggle('highContrastGrid')}
+              className={`w-12 h-6 rounded-full transition-colors relative ${
+                (settings.highContrastGrid ?? true) ? 'bg-cyan-500' : 'bg-slate-800'
+              }`}
+            >
+              <div
+                className={`w-4 h-4 rounded-full bg-white transition-transform absolute top-1 ${
+                  (settings.highContrastGrid ?? true) ? 'left-7' : 'left-1'
                 }`}
               />
             </button>

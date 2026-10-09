@@ -99,6 +99,7 @@ export interface Settings {
   showTimer: boolean;
   showMoves: boolean;
   volume: number;
+  highContrastGrid?: boolean;
 }
 
 export interface Achievement {
