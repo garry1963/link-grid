@@ -88,7 +88,13 @@ class StorageService {
     const raw = this.getItem('stats');
     if (!raw) return DEFAULT_STATS;
     try {
-      return { ...DEFAULT_STATS, ...JSON.parse(raw) };
+      const parsed = JSON.parse(raw);
+      // Auto-heal over-inflated streak from the previous event multiplier bug:
+      if (parsed.dailyPuzzlesCompleted <= 1 && parsed.currentStreak > Math.max(1, parsed.dailyPuzzlesCompleted)) {
+        parsed.currentStreak = Math.max(0, parsed.dailyPuzzlesCompleted);
+        parsed.bestStreak = Math.min(parsed.bestStreak, Math.max(1, parsed.dailyPuzzlesCompleted));
+      }
+      return { ...DEFAULT_STATS, ...parsed };
     } catch {
       return DEFAULT_STATS;
     }

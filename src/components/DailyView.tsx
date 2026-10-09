@@ -81,26 +81,24 @@ export const DailyView: React.FC<DailyViewProps> = ({
               {todayDate.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
             </div>
             <div className="text-[11px] text-slate-400">
-              {isTodaySolved ? 'Completed ⭐' : 'Ready to solve'}
+              {isTodaySolved ? 'Completed ⭐ • No Replay Allowed' : 'Ready to solve'}
             </div>
           </div>
 
-          <button
-            onClick={() => onSelectDaily(getDailyPuzzle(todayKey))}
-            className="py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 transition"
-          >
-            {isTodaySolved ? (
-              <>
-                <CheckCircle size={15} />
-                <span>Replay</span>
-              </>
-            ) : (
-              <>
-                <Play size={15} fill="currentColor" />
-                <span>Play Now</span>
-              </>
-            )}
-          </button>
+          {isTodaySolved ? (
+            <div className="py-2.5 px-4 bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-sm">
+              <CheckCircle size={15} />
+              <span>Completed</span>
+            </div>
+          ) : (
+            <button
+              onClick={() => onSelectDaily(getDailyPuzzle(todayKey))}
+              className="py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 transition"
+            >
+              <Play size={15} fill="currentColor" />
+              <span>Play Now</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -116,42 +114,59 @@ export const DailyView: React.FC<DailyViewProps> = ({
       </div>
 
       <div className="space-y-2 pb-8">
-        {pastDays.map(item => (
-          <div
-            key={item.key}
-            onClick={() => onSelectDaily(getDailyPuzzle(item.key))}
-            className="p-3.5 bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800/80 rounded-2xl cursor-pointer flex items-center justify-between active:scale-98 transition"
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
-                  item.isSolved
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                    : 'bg-slate-800 text-slate-400'
-                }`}
-              >
-                {item.date.getDate()}
-              </div>
-              <div>
-                <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <span>
-                    {item.date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-                  </span>
-                  {item.isToday && (
-                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30">
-                      Today
-                    </span>
-                  )}
+        {pastDays.map(item => {
+          const isCompleted = item.isSolved;
+          return (
+            <div
+              key={item.key}
+              onClick={() => {
+                if (!isCompleted) {
+                  onSelectDaily(getDailyPuzzle(item.key));
+                }
+              }}
+              className={`p-3.5 bg-slate-900/80 border rounded-2xl flex items-center justify-between transition ${
+                isCompleted
+                  ? 'border-emerald-500/30 opacity-80 cursor-default'
+                  : 'hover:bg-slate-800/80 border-slate-800/80 cursor-pointer active:scale-98'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
+                    isCompleted
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                      : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  {isCompleted ? <CheckCircle size={16} /> : item.date.getDate()}
                 </div>
-                <span className="text-[11px] text-slate-400">
-                  {item.isSolved ? 'Completed' : 'Unsolved'}
-                </span>
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>
+                      {item.date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </span>
+                    {item.isToday && (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30">
+                        Today
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-slate-400">
+                    {isCompleted ? 'Solved • No Replay' : 'Unsolved • Tap to Play'}
+                  </span>
+                </div>
               </div>
-            </div>
 
-            <ChevronRight size={16} className="text-slate-600" />
-          </div>
-        ))}
+              {isCompleted ? (
+                <span className="text-[10px] text-emerald-400 font-semibold px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
+                  Locked
+                </span>
+              ) : (
+                <ChevronRight size={16} className="text-slate-600" />
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

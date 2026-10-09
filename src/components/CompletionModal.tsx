@@ -145,23 +145,33 @@ export const CompletionModal: React.FC<CompletionModalProps> = ({
             </button>
           )}
 
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={onReplay}
-              className="py-3 px-3 bg-slate-800 hover:bg-slate-700/80 text-slate-200 font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-slate-700/60 active:scale-98 transition"
-            >
-              <RotateCcw size={15} />
-              <span>Replay</span>
-            </button>
-
+          {puzzle.isDailyPuzzle ? (
             <button
               onClick={handleShare}
-              className="py-3 px-3 bg-slate-800 hover:bg-slate-700/80 text-slate-200 font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-slate-700/60 active:scale-98 transition"
+              className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700/90 text-slate-200 font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-slate-700/60 active:scale-98 transition"
             >
               {copied ? <Check size={15} className="text-emerald-400" /> : <Share2 size={15} />}
-              <span>{copied ? 'Copied!' : 'Share'}</span>
+              <span>{copied ? 'Scorecard Copied!' : 'Share Scorecard'}</span>
             </button>
-          </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={onReplay}
+                className="py-3 px-3 bg-slate-800 hover:bg-slate-700/80 text-slate-200 font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-slate-700/60 active:scale-98 transition"
+              >
+                <RotateCcw size={15} />
+                <span>Replay</span>
+              </button>
+
+              <button
+                onClick={handleShare}
+                className="py-3 px-3 bg-slate-800 hover:bg-slate-700/80 text-slate-200 font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-slate-700/60 active:scale-98 transition"
+              >
+                {copied ? <Check size={15} className="text-emerald-400" /> : <Share2 size={15} />}
+                <span>{copied ? 'Copied!' : 'Share'}</span>
+              </button>
+            </div>
+          )}
 
           <button
             onClick={onHome}

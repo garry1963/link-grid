@@ -54,7 +54,21 @@ type ViewMode =
 export default function App() {
   const [view, setView] = useState<ViewMode>('menu');
   const [settings, setSettings] = useState<Settings>(() => storage.getSettings());
-  const [stats, setStats] = useState<PlayerStatistics>(() => storage.getStats());
+  const [stats, setStats] = useState<PlayerStatistics>(() => {
+    const s = storage.getStats();
+    // Heal any over-inflated streak from the previous event bug:
+    // If dailyPuzzlesCompleted is 0 or 1, streak must be at most 1
+    if (s.dailyPuzzlesCompleted <= 1 && s.currentStreak > 1) {
+      const healed: PlayerStatistics = {
+        ...s,
+        currentStreak: Math.max(0, s.dailyPuzzlesCompleted),
+        bestStreak: Math.min(s.bestStreak, Math.max(1, s.dailyPuzzlesCompleted)),
+      };
+      storage.saveStats(healed);
+      return healed;
+    }
+    return s;
+  });
   const [achievements, setAchievements] = useState(() => storage.getAchievements());
   const [completedCampaignLevelIds, setCompletedCampaignLevelIds] = useState<Set<string>>(
     () => storage.getCompletedCampaignLevelIds()
@@ -72,6 +86,7 @@ export default function App() {
   const [moveCount, setMoveCount] = useState<number>(0);
   const [hintsUsed, setHintsUsed] = useState<number>(0);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
+  const isSolvedRef = useRef<boolean>(false);
 
   // Hint modals & indicators
   const [showHintModal, setShowHintModal] = useState<boolean>(false);
@@ -104,6 +119,14 @@ export default function App() {
 
   // Load and start a puzzle
   const loadPuzzle = useCallback((puzzle: PuzzleDef) => {
+    // If it's a daily challenge and already completed, no replays allowed!
+    const todayStr = new Date().toISOString().split('T')[0];
+    const puzzleDate = puzzle.dateKey || todayStr;
+    if (puzzle.isDailyPuzzle && (dailySolvedMap[puzzleDate] || stats.lastDailyDate === puzzleDate)) {
+      return;
+    }
+
+    isSolvedRef.current = false;
     setCurrentPuzzle(puzzle);
     setIsCompleted(false);
     setHighlightedColorId(null);
@@ -136,12 +159,12 @@ export default function App() {
     }
 
     setView('game');
-  }, []);
+  }, [dailySolvedMap, stats.lastDailyDate]);
 
   // Update paths from GameBoard interaction
   const handlePathsChange = useCallback(
     (newPaths: Path[], moveIncrement: boolean = false) => {
-      if (!currentPuzzle || isCompleted) return;
+      if (!currentPuzzle || isCompleted || isSolvedRef.current) return;
 
       // Push previous state to undo stack
       setUndoStack(prev => [...prev.slice(-30), currentPaths]);
@@ -154,7 +177,8 @@ export default function App() {
 
       // Check board completion
       const result = checkFullBoardCompletion(currentPuzzle, newPaths);
-      if (result.isComplete && !isCompleted) {
+      if (result.isComplete && !isCompleted && !isSolvedRef.current) {
+        isSolvedRef.current = true;
         handlePuzzleSolved();
       }
 
@@ -184,33 +208,54 @@ export default function App() {
     setIsCompleted(true);
     sound.playComplete();
 
+    const todayStr = new Date().toISOString().split('T')[0];
+    const puzzleDate = currentPuzzle.dateKey || todayStr;
+
     // Mark completed in storage
     if (currentPuzzle.chapterId && currentPuzzle.levelNumber) {
       storage.markCampaignLevelCompleted(currentPuzzle.id);
       setCompletedCampaignLevelIds(prev => new Set(prev).add(currentPuzzle.id));
     }
-    if (currentPuzzle.isDailyPuzzle && currentPuzzle.dateKey) {
-      storage.markDailySolved(currentPuzzle.dateKey);
-      setDailySolvedMap(prev => ({ ...prev, [currentPuzzle.dateKey!]: true }));
+    if (currentPuzzle.isDailyPuzzle && puzzleDate) {
+      storage.markDailySolved(puzzleDate);
+      setDailySolvedMap(prev => ({ ...prev, [puzzleDate]: true }));
     }
 
     // Update player statistics
     setStats(prev => {
-      const todayStr = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+
       let newStreak = prev.currentStreak;
-      if (currentPuzzle.isDailyPuzzle && currentPuzzle.dateKey === todayStr) {
-        newStreak = prev.currentStreak + 1;
+      let newDailyCompleted = prev.dailyPuzzlesCompleted;
+      let lastDailyDate = prev.lastDailyDate;
+
+      if (currentPuzzle.isDailyPuzzle) {
+        // Prevent duplicate streak increments for the same calendar date
+        if (prev.lastDailyDate !== puzzleDate) {
+          newDailyCompleted = prev.dailyPuzzlesCompleted + 1;
+          lastDailyDate = puzzleDate;
+
+          // If previously completed challenge was yesterday, increment streak by exactly 1
+          if (prev.lastDailyDate === yesterdayStr) {
+            newStreak = prev.currentStreak + 1;
+          } else {
+            // First time completing a daily challenge or streak was broken: start streak at 1
+            newStreak = 1;
+          }
+        }
       }
 
       const diffKey = currentPuzzle.difficulty;
       const updated: PlayerStatistics = {
         ...prev,
         puzzlesCompleted: prev.puzzlesCompleted + 1,
-        dailyPuzzlesCompleted: currentPuzzle.isDailyPuzzle
-          ? prev.dailyPuzzlesCompleted + 1
-          : prev.dailyPuzzlesCompleted,
+        dailyPuzzlesCompleted: newDailyCompleted,
         currentStreak: newStreak,
         bestStreak: Math.max(prev.bestStreak, newStreak),
+        lastDailyDate,
         totalPlayingTime: prev.totalPlayingTime + elapsedSeconds,
         totalHintsUsed: prev.totalHintsUsed + hintsUsed,
         completedByDifficulty: {
@@ -300,6 +345,7 @@ export default function App() {
   // Back to Main Menu handler (cleans up modal and game state)
   const handleBackToMenu = useCallback(() => {
     sound.playClick();
+    isSolvedRef.current = false;
     setIsCompleted(false);
     setShowHintModal(false);
     setShowHowToPlay(false);
@@ -342,8 +388,8 @@ export default function App() {
             </p>
           </div>
 
-          {/* Quick Continue Card (if active session) */}
-          {lastPlayedId && (
+          {/* Quick Continue Card (if active session and not completed daily challenge) */}
+          {lastPlayedId && !(lastPlayedId.startsWith('daily_') && (dailySolvedMap[todayStr] || stats.lastDailyDate === todayStr)) && (
             <div
               onClick={() => {
                 const p = storage.getProgress(lastPlayedId);

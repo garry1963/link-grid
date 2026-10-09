@@ -23,6 +23,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   suggestedCell,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const pointerTypeRef = useRef<'touch' | 'mouse' | null>(null);
   const [activeColorId, setActiveColorId] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
 
@@ -213,11 +214,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
       }
     };
-    const onTouchEnd = () => handlePointerEnd();
+    const onTouchEnd = () => {
+      pointerTypeRef.current = null;
+      handlePointerEnd();
+    };
     const onMouseMove = (e: MouseEvent) => {
+      if (pointerTypeRef.current === 'touch') return;
       handlePointerMove(e.clientX, e.clientY);
     };
-    const onMouseUp = () => handlePointerEnd();
+    const onMouseUp = () => {
+      pointerTypeRef.current = null;
+      handlePointerEnd();
+    };
 
     window.addEventListener('touchmove', onTouchMove, { passive: false });
     window.addEventListener('touchend', onTouchEnd);
@@ -252,9 +260,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     <div className="relative w-full max-w-[420px] sm:max-w-[500px] md:max-w-[580px] lg:max-w-[640px] xl:max-w-[680px] aspect-square mx-auto select-none touch-none p-2 sm:p-3 md:p-3.5 bg-gradient-to-b from-[#141e33] to-[#090e1a] rounded-3xl border-2 border-slate-700/80 shadow-2xl shadow-cyan-950/25 backdrop-blur-xl">
       <div
         ref={containerRef}
-        onMouseDown={e => handlePointerStart(e.clientX, e.clientY)}
+        onMouseDown={e => {
+          if (pointerTypeRef.current === 'touch') return;
+          pointerTypeRef.current = 'mouse';
+          handlePointerStart(e.clientX, e.clientY);
+        }}
         onTouchStart={e => {
           if (e.touches.length > 0) {
+            pointerTypeRef.current = 'touch';
             handlePointerStart(e.touches[0].clientX, e.touches[0].clientY);
           }
         }}
